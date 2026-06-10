@@ -1,0 +1,279 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  DOCTOR
+  ADMIN
+  CAREGIVER
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum NotificationType {
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CANCELLED
+  NEW_BLOG_POST
+  COMMUNITY_REPLY
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  fullName       String   @map("full_name")
+  role           UserRole @default(USER)
+  avatarUrl      String?  @map("avatar_url")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  isActive       Boolean  @default(true) @map("is_active")
+  diagnosisLevel String?  @map("diagnosis_level")
+
+  doctorProfile  DoctorProfile?
+  blogPosts      BlogPost[]
+  comments       Comment[]
+  communityPosts CommunityPost[]
+  moodLogs       MoodLog[]
+  notifications  Notification[]
+
+  @@map("users")
+}
+
+model DoctorProfile {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  specialty        String
+  licenseNumber    String   @map("license_number")
+  bio              String   @db.Text
+  languages        String[]
+  fee              Decimal  @db.Decimal(10, 2)
+  isApproved       Boolean  @default(false) @map("is_approved")
+  rating           Decimal  @default(0) @db.Decimal(3, 2)
+  totalReviews     Int      @default(0) @map("total_reviews")
+  availabilityJson Json     @map("availability_json")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  appointments      Appointment[]
+  consultationNotes ConsultationNote[]
+  reviews           Review[]
+
+  @@map("doctor_profiles")
+}
+
+model Appointment {
+  id         String        @id @default(uuid())
+  guestName  String        @map("guest_name")
+  guestEmail String        @map("guest_email")
+  guestPhone String        @map("guest_phone")
+  doctorId   String        @map("doctor_id")
+  doctor     DoctorProfile @relation(fields: [doctorId], references: [id])
+
+  scheduledAt      DateTime          @map("scheduled_at")
+  durationMins     Int               @default(60) @map("duration_mins")
+  status           AppointmentStatus @default(PENDING)
+  sessionType      String            @map("session_type") // "video" or "chat"
+  stripePaymentId  String?           @map("stripe_payment_id")
+  videoRoomUrl     String?           @map("video_room_url")
+  bookingReference String            @unique @map("booking_reference")
+  notes            String?           @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  consultationNote ConsultationNote?
+  review           Review?
+
+  @@index([doctorId])
+  @@index([bookingReference])
+  @@map("appointments")
+}
+
+model ConsultationNote {
+  id            String        @id @default(uuid())
+  appointmentId String        @unique @map("appointment_id")
+  appointment   Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  doctorId      String        @map("doctor_id")
+  doctor        DoctorProfile @relation(fields: [doctorId], references: [id])
+
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("consultation_notes")
+}
+
+model GameProgress {
+  id             String   @id @default(uuid())
+  userId         String?  @map("user_id")
+  gameId         String   @map("game_id")
+  gameName       String   @map("game_name")
+  score          Int      @default(0)
+  levelReached   Int      @default(1) @map("level_reached")
+  timePlayedSecs Int      @default(0) @map("time_played_secs")
+  playedAt       DateTime @default(now()) @map("played_at")
+
+  @@index([userId, gameId])
+  @@map("games_progress")
+}
+
+model MoodLog {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  moodScore      Int     @map("mood_score")
+  sensoryLogJson Json?   @map("sensory_log_json")
+  eventNotes     String? @map("event_notes") @db.Text
+  loggedBy       String  @map("logged_by") // "self" or "caregiver"
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("mood_logs")
+}
+
+model BlogPost {
+  id       String @id @default(uuid())
+  authorId String @map("author_id")
+  author   User   @relation(fields: [authorId], references: [id])
+
+  title         String
+  slug          String   @unique
+  content       String   @db.Text
+  coverImageUrl String?  @map("cover_image_url")
+  category      String
+  tags          String[]
+  status        String   @default("draft") // "draft" or "published"
+  readTimeMins  Int      @default(5) @map("read_time_mins")
+  likesCount    Int      @default(0) @map("likes_count")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  comments Comment[]
+
+  @@index([category])
+  @@index([status])
+  @@map("blog_posts")
+}
+
+model Comment {
+  id     String   @id @default(uuid())
+  postId String   @map("post_id")
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String   @map("user_id")
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content    String  @db.Text
+  isApproved Boolean @default(false) @map("is_approved")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([postId])
+  @@map("comments")
+}
+
+model CommunityGroup {
+  id          String  @id @default(uuid())
+  name        String
+  type        String
+  moderatorId String? @map("moderator_id")
+  description String  @db.Text
+  memberCount Int     @default(0) @map("member_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  posts CommunityPost[]
+
+  @@map("community_groups")
+}
+
+model CommunityPost {
+  id      String         @id @default(uuid())
+  groupId String         @map("group_id")
+  group   CommunityGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId  String         @map("user_id")
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content     String  @db.Text
+  isAnonymous Boolean @default(false) @map("is_anonymous")
+  isApproved  Boolean @default(true) @map("is_approved")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([groupId, createdAt])
+  @@map("community_posts")
+}
+
+model Resource {
+  id          String  @id @default(uuid())
+  title       String
+  category    String
+  fileUrl     String  @map("file_url")
+  description String  @db.Text
+  uploadedBy  String? @map("uploaded_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("resources")
+}
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type       NotificationType
+  message    String           @db.Text
+  isRead     Boolean          @default(false) @map("is_read")
+  relatedUrl String?          @map("related_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model Review {
+  id            String        @id @default(uuid())
+  appointmentId String        @unique @map("appointment_id")
+  appointment   Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patientId     String        @map("patient_id")
+  doctorId      String        @map("doctor_id")
+  doctor        DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  rating  Int
+  comment String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([doctorId])
+  @@map("reviews")
+}
