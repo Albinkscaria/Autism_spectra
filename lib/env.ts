@@ -31,7 +31,11 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+let cachedEnv: Env | undefined = undefined;
+
 function validateEnv(): Env {
+  if (cachedEnv) return cachedEnv;
+  
   const parsed = envSchema.safeParse(process.env);
   
   if (!parsed.success) {
@@ -39,7 +43,13 @@ function validateEnv(): Env {
     throw new Error("Invalid environment variables");
   }
   
-  return parsed.data;
+  cachedEnv = parsed.data;
+  return cachedEnv;
 }
 
-export const env = validateEnv();
+// Lazy load: only validate when accessed
+Object.defineProperty(exports, 'env', {
+  get: () => validateEnv(),
+});
+
+export { validateEnv };

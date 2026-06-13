@@ -29,11 +29,15 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url('Invalid APP_URL'),
 });
 
+let cachedEnv: ReturnType<typeof envSchema.parse> | undefined = undefined;
+
 // Validate environment variables
 function validateEnv() {
+  if (cachedEnv) return cachedEnv;
+  
   try {
-    const env = envSchema.parse(process.env);
-    return env;
+    cachedEnv = envSchema.parse(process.env);
+    return cachedEnv;
   } catch (error) {
     console.error('❌ Environment validation failed:');
     if (error instanceof z.ZodError) {
@@ -45,8 +49,10 @@ function validateEnv() {
   }
 }
 
-// Export validated environment
-export const env = validateEnv();
+// Lazy load environment - validate only when accessed
+export const env = new Proxy({} as any, {
+  get: () => validateEnv(),
+});
 
 // Type for environment variables
 export type Env = z.infer<typeof envSchema>;
