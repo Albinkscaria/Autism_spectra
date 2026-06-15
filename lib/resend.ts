@@ -1,10 +1,24 @@
 import { Resend } from 'resend';
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY is not defined');
+let resendInstance: Resend | null = null;
+
+function getResend() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not defined. Set it in your environment variables to use email sending.');
+  }
+  
+  if (!resendInstance) {
+    resendInstance = new Resend(process.env.RESEND_API_KEY);
+  }
+  
+  return resendInstance;
 }
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+Object.defineProperty(exports, 'resend', {
+  get() {
+    return getResend();
+  }
+});
 
 export interface SendBookingConfirmationParams {
   to: string;
