@@ -99,7 +99,7 @@ export default function DoctorProfilePage({
             <CardContent>
               {doctor.reviews && doctor.reviews.length > 0 ? (
                 <div className="space-y-4">
-                  {doctor.reviews.map((review: { id: string; rating: number; createdAt: string; comment?: string }) => (
+                  {doctor.reviews.map((review: { id: string; rating: number; createdAt: string; comment: string | null }) => (
                     <div key={review.id} className="border-b border-gray-200 pb-4 last:border-0">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="flex">

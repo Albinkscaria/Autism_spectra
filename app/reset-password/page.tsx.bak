@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
@@ -52,11 +52,15 @@ export default function ResetPassword() {
 
     try {
       const { error } = await supabase.auth.updateUser({ password });
+
       if (error) throw error;
+
       setSuccess(true);
-      setTimeout(() => router.push('/login'), 1500);
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
     } catch (err: any) {
-      setError(err?.message ?? 'Unable to update password');
+      setError(err.message ?? 'Unable to update password');
     } finally {
       setLoading(false);
     }
@@ -68,7 +72,9 @@ export default function ResetPassword() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-[#1D9E75]">Password Updated</CardTitle>
-            <CardDescription>Your password has been updated. Redirecting to login...</CardDescription>
+            <CardDescription>
+              Your password has been successfully updated. Redirecting to login...
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -86,11 +92,24 @@ export default function ResetPassword() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="password">New Password</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </div>
+
             <div>
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
             </div>
 
             {error && (

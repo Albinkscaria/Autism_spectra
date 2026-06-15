@@ -11,7 +11,7 @@ function PostCard({ post }: {
     id: string;
     content: string;
     isAnonymous: boolean;
-    createdAt: Date;
+    createdAt: string;
     user: { fullName: string; avatarUrl: string | null };
   };
 }) {

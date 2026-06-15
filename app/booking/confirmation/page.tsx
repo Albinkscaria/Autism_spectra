@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
@@ -7,7 +8,7 @@ import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function BookingConfirmationPage() {
+function BookingConfirmationContent() {
   const searchParams = useSearchParams();
   const bookingReference = searchParams.get("ref");
 
@@ -117,5 +118,13 @@ export default function BookingConfirmationPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function BookingConfirmationPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-12"><p className="text-center text-lg text-gray-600">Loading confirmation...</p></div>}>
+      <BookingConfirmationContent />
+    </Suspense>
   );
 }
