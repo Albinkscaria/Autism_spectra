@@ -2,32 +2,20 @@ import Stripe from 'stripe';
 
 let stripeInstance: Stripe | null = null;
 
-function getStripe() {
+export function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
     throw new Error('STRIPE_SECRET_KEY is not defined. Set it in your environment variables to use Stripe payments.');
   }
-  
+
   if (!stripeInstance) {
     stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2026-02-25.clover',
       typescript: true,
     });
   }
-  
+
   return stripeInstance;
 }
-
-export const stripe = {
-  get instance() {
-    return getStripe();
-  }
-};
-
-Object.defineProperty(exports, 'stripe', {
-  get() {
-    return getStripe();
-  }
-});
 
 export interface CreateCheckoutSessionParams {
   appointmentId: string;
@@ -39,6 +27,7 @@ export interface CreateCheckoutSessionParams {
 
 export async function createCheckoutSession(params: CreateCheckoutSessionParams) {
   const { appointmentId, amount, doctorName, guestEmail, bookingReference } = params;
+  const stripe = getStripe();
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
