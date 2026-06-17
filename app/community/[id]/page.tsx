@@ -11,12 +11,14 @@ function PostCard({ post }: {
     id: string;
     content: string;
     isAnonymous: boolean;
-    createdAt: string;
+    createdAt: string | Date;
     user: { fullName: string; avatarUrl: string | null };
   };
 }) {
   const displayName = post.isAnonymous ? 'Anonymous Member' : post.user.fullName;
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+  const createdAt = typeof post.createdAt === 'string' ? new Date(post.createdAt) : post.createdAt;
 
   return (
     <div style={{
@@ -80,7 +82,7 @@ export default function CirclePage({ params }: { params: Promise<{ id: string }>
     id: string;
     content: string;
     isAnonymous: boolean;
-    createdAt: string;
+    createdAt: string | Date;
     user: { fullName: string; avatarUrl: string | null };
   };
 
