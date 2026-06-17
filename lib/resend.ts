@@ -14,10 +14,10 @@ function getResend() {
   return resendInstance;
 }
 
-Object.defineProperty(exports, 'resend', {
-  get() {
-    return getResend();
-  }
+export const resend = new Proxy({} as Resend, {
+  get(_, prop) {
+    return (getResend() as any)[prop];
+  },
 });
 
 export interface SendBookingConfirmationParams {
