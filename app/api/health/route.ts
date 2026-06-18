@@ -3,8 +3,13 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Check database connection
-    await prisma.$queryRaw`SELECT 1`;
+    // If no DATABASE_URL is configured, skip the DB check so builds
+    // (and deploy-time static analysis) won't fail. The `prisma` import
+    // provides a safe no-op proxy when the DB is not configured.
+    if (process.env.DATABASE_URL) {
+      // Check database connection
+      await prisma.$queryRaw`SELECT 1`;
+    }
     
     // Check essential environment variables
     const requiredEnvVars = [

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: auticare
+    env: node
+    plan: free
+    branch: main
+    buildCommand: npm run build
+    startCommand: npm start
+    nodeVersion: 24
+    root: .
+    healthCheckPath: /api/health
